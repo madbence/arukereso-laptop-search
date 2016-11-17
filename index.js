@@ -18,6 +18,7 @@ function filter(arr, name, fn) {
 }
 
 const methods = {
+
   scrapeList: async function scrapeList() {
     const entries = [];
     for (let i = 0; i < 4880; i += 25) {
@@ -31,6 +32,7 @@ const methods = {
     }
     console.log(JSON.stringify(entries));
   },
+
   scrapeEntries: async function scrapeEntries() {
     const entries = require('./links.json').sort((a, b) => a.name.localeCompare(b.name));
     let i = 0;
@@ -46,6 +48,7 @@ const methods = {
       console.error(`${++i}/${entries.length}`);
     }
   },
+
   search: async function search() {
     const results = [];
     return new Promise(resolve => {
@@ -57,10 +60,11 @@ const methods = {
           if (
             filter(props, 'Kijelző mérete', v => v === '13.3"') &&
             filter(props, 'Memória mérete', v => v === '8 GB') &&
+            // filter(props, 'Memória típusa', v => v === 'DDR4') &&
             filter(props, 'Merevlemez típusa', v => v === 'SSD') &&
-            filter(props, 'Merevlemez kapacitása', v => v === '128 GB') &&
+            filter(props, 'Merevlemez kapacitása', v => v.match(/128|256/)) &&
             filter(props, 'Kijelző felbontása', v => v === '1920 x 1080') &&
-            filter(props, 'Processzor modell', v => v.match(/^(6|7)(2|3)/)) && // skylake & kaby lake i5
+            filter(props, 'Processzor modell', v => v.match(/^(6|7)(2|3|4)/)) && // skylake & kaby lake i5
             filter(props, 'Videokártya modell', v => v.match(/Intel HD/))
           ) {
             results.push(data);
@@ -76,6 +80,7 @@ const methods = {
       });
     });
   },
+
 };
 
 methods[process.argv[2]]().then(
