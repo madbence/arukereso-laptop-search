@@ -13,6 +13,10 @@ function get(url) {
   });
 }
 
+function filter(arr, name, fn) {
+  return arr.find(prop => prop.name === name && fn(prop.value));
+}
+
 const methods = {
   scrapeList: async function scrapeList() {
     const entries = [];
@@ -33,33 +37,45 @@ const methods = {
     for (const entry of entries) {
       const res = await get(entry.href);
       const $ = cheerio.load(res);
+      const price = +$('.price').eq(0).text().trim().match(/(.*?)Ft/)[1].replace(/\D/g, '');
       const props = $('.prop-name').map((index, el) => ({
         name: $(el).text().trim(),
         value: $(el.parent).find('td').eq(1).text(),
       })).get();
-      console.log(JSON.stringify({ entry, props }));
+      console.log(JSON.stringify({ entry, price, props }));
       console.error(`${++i}/${entries.length}`);
     }
-    console.log(JSON.stringify(db));
   },
   search: async function search() {
-    process.stdin.pipe(split()).on('data', line => {
-      try {
-        if (!line) return;
-        const data = JSON.parse(line);
-        if (data.props.find(prop => prop.name === 'Processzor modell' && prop.value.match(/^(6|7)(2|3)/)) &&
-            data.props.find(prop => prop.name === 'Memória mérete' && prop.value.match(/8 ?GB/)) &&
-            data.props.find(prop => prop.name === 'Kijelző mérete' && prop.value === '13.3"') &&
-            data.props.find(prop => prop.name === 'Merevlemez típusa' && prop.value === 'SSD') &&
-            data.props.find(prop => prop.name === 'Merevlemez kapacitása' && prop.value === '128 GB') &&
-            data.props.find(prop => prop.name === 'Kijelző felbontása' && prop.value === '1920 x 1080')) {
-          console.log(data.entry.name, data.entry.href);
+    const results = [];
+    return new Promise(resolve => {
+      process.stdin.pipe(split()).on('data', line => {
+        try {
+          if (!line) return;
+          const data = JSON.parse(line);
+          const props = data.props;
+          if (
+            filter(props, 'Kijelző mérete', v => v === '13.3"') &&
+            filter(props, 'Memória mérete', v => v === '8 GB') &&
+            filter(props, 'Merevlemez típusa', v => v === 'SSD') &&
+            filter(props, 'Merevlemez kapacitása', v => v === '128 GB') &&
+            filter(props, 'Kijelző felbontása', v => v === '1920 x 1080') &&
+            filter(props, 'Processzor modell', v => v.match(/^(6|7)(2|3)/)) &&
+            filter(props, 'Videokártya modell', v => v.match(/Intel HD/))
+          ) {
+            results.push(data);
+          }
+        } catch (err) {
+          console.error(err);
         }
-      } catch (err) {
-        console.error(err);
-      }
+      }).once('end', () => {
+        for (const result of results.sort((a, b) => b.price - a.price)) {
+          console.log(result.entry.name, result.price, result.entry.href);
+        }
+        resolve();
+      });
     });
-  }
+  },
 };
 
 methods[process.argv[2]]().then(
