@@ -60,7 +60,7 @@ const methods = {
             filter(props, 'Merevlemez típusa', v => v === 'SSD') &&
             filter(props, 'Merevlemez kapacitása', v => v === '128 GB') &&
             filter(props, 'Kijelző felbontása', v => v === '1920 x 1080') &&
-            filter(props, 'Processzor modell', v => v.match(/^(6|7)(2|3)/)) &&
+            filter(props, 'Processzor modell', v => v.match(/^(6|7)(2|3)/)) && // skylake & kaby lake i5
             filter(props, 'Videokártya modell', v => v.match(/Intel HD/))
           ) {
             results.push(data);
